@@ -5,7 +5,6 @@ metadata:
   namespace: ollama-ai
   labels:
     app: ollama-orca-mini
-    service-type: api
 spec:
   type: ClusterIP
   ports:

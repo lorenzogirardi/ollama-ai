@@ -38,23 +38,7 @@ spec:
         volumeMounts:
         - name: ollama-data
           mountPath: /root/.ollama
-        lifecycle:
-          postStart:
-            exec:
-              command:
-              - /bin/sh
-              - -c
-              - |
-                # Attendi che Ollama sia pronto
-                until curl -f http://localhost:11434/api/tags; do
-                  echo "Waiting for Ollama to be ready..."
-                  sleep 5
-                done
-                
-                # Scarica il modello orca-mini se non è già presente
-                echo "Downloading orca-mini:3b model..."
-                ollama pull orca-mini:3b
-                echo "Model download completed!"
+
         readinessProbe:
           httpGet:
             path: /api/tags

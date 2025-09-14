@@ -1,0 +1,2 @@
+ 1893  kubectl port-forward -n ollama-ai svc/ollama-service 11434:11434 &
+ 1895  kubectl exec -n ollama-ai deployment/ollama-orca-mini -- ollama pull orca-mini:3b
