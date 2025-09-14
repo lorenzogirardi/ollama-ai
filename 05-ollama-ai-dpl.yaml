@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama-orca-mini
+  namespace: ollama-ai
+  labels:
+    app: ollama-orca-mini
+    version: v1.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama-orca-mini
+  template:
+    metadata:
+      labels:
+        app: ollama-orca-mini
+        version: v1.0
+    spec:
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        ports:
+        - containerPort: 11434
+          name: http
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1000m"
+          limits:
+            memory: "6Gi"
+            cpu: "4000m"
+        env:
+        - name: OLLAMA_HOST
+          value: "0.0.0.0:11434"
+        - name: OLLAMA_ORIGINS
+          value: "*"  # Per accesso tramite Ingress
+        volumeMounts:
+        - name: ollama-data
+          mountPath: /root/.ollama
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - |
+                # Attendi che Ollama sia pronto
+                until curl -f http://localhost:11434/api/tags; do
+                  echo "Waiting for Ollama to be ready..."
+                  sleep 5
+                done
+                
+                # Scarica il modello orca-mini se non è già presente
+                echo "Downloading orca-mini:3b model..."
+                ollama pull orca-mini:3b
+                echo "Model download completed!"
+        readinessProbe:
+          httpGet:
+            path: /api/tags
+            port: 11434
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /api/tags
+            port: 11434
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /api/tags
+            port: 11434
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 30  # Permette fino a 5 minuti per il primo avvio
+      volumes:
+      - name: ollama-data
+        emptyDir:
+          sizeLimit: 4Gi
+      restartPolicy: Always
